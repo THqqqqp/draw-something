@@ -58,15 +58,19 @@ onMounted(() => {
   wordStore.loadWords()
 })
 
+// 建立连接拿到自己的 socketId
 socket.on('connect', () => {
   myId.value = socket.id
 })
 
+
+// 加入房间
 const joinRoom = () => {
   if (!nickname.value.trim()) return
   socket.emit('joinRoom', roomId.value, nickname.value)
 }
 
+// 限流广播本地场景变化
 const emitScene = throttle(elements => {
   socket.emit('scene', { roomId: roomId.value, elements })
 }, 100)
@@ -76,11 +80,14 @@ function handleSceneChange(elements) {
   emitScene(elements)
 }
 
+// 收到远端场景
 socket.on('scene', ({ elements }) => {
   if (isPainter.value) return
   sceneData.value = { elements }
   sceneKey.value = Date.now()
 })
+
+// 画者身份变化
 
 socket.on('painterChange', ({ painterId: pid }) => {
   painterId.value = pid
@@ -102,6 +109,7 @@ socket.on('wordToDrawer', ({ word }) => {
 socket.on('correctGuess', () => {
   wordStore.current = null
 })
+
 </script>
 
 <style scoped>

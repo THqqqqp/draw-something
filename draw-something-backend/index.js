@@ -48,6 +48,7 @@ io.on('connection', (socket) => {
 
     // 传递题目给画者
     socket.on('sendWordToDrawer', ({ roomId, word }) => {
+
         if (rooms[roomId]) rooms[roomId].currentWord = word;
         io.to(roomId).emit('wordToDrawer', { word });
     });
@@ -63,7 +64,7 @@ io.on('connection', (socket) => {
             io.to(roomId).emit('chat', { nickname, message: guess });
         }
     });
-
+  
     // 离开房间
     socket.on('disconnect', () => {
         for (const roomId in rooms) {
