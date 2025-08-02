@@ -14,7 +14,7 @@ app.use(cors());
 app.use(express.json());
 
 // 房间状态（简化版，生产用redis或map更安全）
-const rooms = {} // { roomId: { painterId: socket.id, users: Set<socket.id> } }
+const rooms = {} // { roomId: { painterId: socket.id, users: Set<socket.id>, currentWord: '' } }
 
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
@@ -25,7 +25,7 @@ io.on('connection', (socket) => {
         socket.data.nickname = nickname;
 
         if (!rooms[roomId]) {
-            rooms[roomId] = { painterId: socket.id, users: new Set() };
+            rooms[roomId] = { painterId: socket.id, users: new Set(), currentWord: '' };
         }
         rooms[roomId].users.add(socket.id);
 
@@ -48,9 +48,23 @@ io.on('connection', (socket) => {
 
     // 传递题目给画者
     socket.on('sendWordToDrawer', ({ roomId, word }) => {
+
+        if (rooms[roomId]) rooms[roomId].currentWord = word;
         io.to(roomId).emit('wordToDrawer', { word });
     });
 
+    // 猜题
+    socket.on('guess', ({ roomId, guess, nickname }) => {
+        const target = rooms[roomId]?.currentWord || '';
+        const normalize = s => s.toLowerCase().replace(/\s+/g, '');
+        if (target && normalize(guess) === normalize(target)) {
+            io.to(roomId).emit('correctGuess', { nickname });
+            rooms[roomId].currentWord = '';
+        } else {
+            io.to(roomId).emit('chat', { nickname, message: guess });
+        }
+    });
+  
     // 离开房间
     socket.on('disconnect', () => {
         for (const roomId in rooms) {
