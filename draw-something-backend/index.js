@@ -46,6 +46,11 @@ io.on('connection', (socket) => {
         socket.to(roomId).emit('scene', { elements });
     });
 
+    // 传递题目给画者
+    socket.on('sendWordToDrawer', ({ roomId, word }) => {
+        io.to(roomId).emit('wordToDrawer', { word });
+    });
+
     // 离开房间
     socket.on('disconnect', () => {
         for (const roomId in rooms) {
